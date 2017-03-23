@@ -11,6 +11,7 @@ uniform mat4 u_matrix;
 uniform mediump float u_zoom;
 uniform bool u_rotate_with_map;
 uniform mediump float u_viewport_height;
+uniform mediump float u_text_pitch_scale;
 uniform vec2 u_extrude_scale;
 
 uniform vec2 u_texsize;
@@ -39,7 +40,8 @@ void main() {
         gl_Position.z += z * gl_Position.w;
     } else {
         gl_Position = u_matrix * vec4(a_pos, 0, 1);
-        extrude *= gl_Position.w / (u_viewport_height * 2.0);
+        highp float perspective_ratio = gl_Position.w / (u_viewport_height*2.0);
+        extrude *= 1.0 + u_text_pitch_scale*(perspective_ratio - 1.0);
         gl_Position += vec4(extrude, 0, 0);
     }
 

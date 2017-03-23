@@ -148,6 +148,7 @@ function setSymbolDrawState(program, painter, isText, isSDF, rotateWithMap, pitc
     gl.uniform1f(program.u_bearing, tr.bearing / 360 * 2 * Math.PI);
     gl.uniform1f(program.u_aspect_ratio, tr.width / tr.height);
     gl.uniform1f(program.u_viewport_height, tr.height);
+    gl.uniform1f(program.u_text_pitch_scale, 0.7);
 }
 
 function drawTileSymbols(program, painter, layer, tile, buffers, isText, isSDF,
