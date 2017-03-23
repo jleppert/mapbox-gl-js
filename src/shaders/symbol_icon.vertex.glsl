@@ -10,6 +10,7 @@ uniform mat4 u_matrix;
 
 uniform mediump float u_zoom;
 uniform bool u_rotate_with_map;
+uniform mediump float u_viewport_height;
 uniform vec2 u_extrude_scale;
 
 uniform vec2 u_texsize;
@@ -37,7 +38,9 @@ void main() {
         gl_Position = u_matrix * vec4(a_pos + extrude, 0, 1);
         gl_Position.z += z * gl_Position.w;
     } else {
-        gl_Position = u_matrix * vec4(a_pos, 0, 1) + vec4(extrude, 0, 0);
+        gl_Position = u_matrix * vec4(a_pos, 0, 1);
+        extrude *= gl_Position.w / (u_viewport_height * 2.0);
+        gl_Position += vec4(extrude, 0, 0);
     }
 
     v_tex = a_tex / u_texsize;

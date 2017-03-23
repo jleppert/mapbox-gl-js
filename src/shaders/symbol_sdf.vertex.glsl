@@ -1,7 +1,10 @@
 const float PI = 3.141592653589793;
 
+// a_pos_offset: (anchor x, anchor y, x offset, y offset) Anchors are in tile coordinates
 attribute vec4 a_pos_offset;
+// a_texture_pos: (x,y) position in glyph atlas that matches this vertex
 attribute vec2 a_texture_pos;
+// a_data: (label min zoom, label angle, minzoom, maxzoom)
 attribute vec4 a_data;
 
 #pragma mapbox: define lowp vec4 fill_color
@@ -19,6 +22,7 @@ uniform bool u_pitch_with_map;
 uniform mediump float u_pitch;
 uniform mediump float u_bearing;
 uniform mediump float u_aspect_ratio;
+uniform mediump float u_viewport_height;
 uniform vec2 u_extrude_scale;
 
 uniform vec2 u_texsize;
@@ -85,7 +89,11 @@ void main() {
     // rotation-alignment: viewport
     } else {
         vec2 extrude = u_extrude_scale * (a_offset / 64.0);
-        gl_Position = u_matrix * vec4(a_pos, 0, 1) + vec4(extrude, 0, 0);
+        //gl_Position = u_matrix * vec4(a_pos, 0, 1) + vec4(extrude, 0, 0);
+
+        gl_Position = u_matrix * vec4(a_pos, 0, 1);
+        extrude *= gl_Position.w / (u_viewport_height*2.0);
+        gl_Position += vec4(extrude, 0, 0);
     }
 
     v_gamma_scale = gl_Position.w;
