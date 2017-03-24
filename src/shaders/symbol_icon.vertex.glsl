@@ -35,16 +35,17 @@ void main() {
     mediump float z = 2.0 - step(a_minzoom, u_zoom) - (1.0 - step(a_maxzoom, u_zoom));
 
     vec2 extrude = u_extrude_scale * (a_offset / 64.0);
+    highp float perspective_ratio = 1.0;
     if (u_rotate_with_map) {
         gl_Position = u_matrix * vec4(a_pos + extrude, 0, 1);
         gl_Position.z += z * gl_Position.w;
     } else {
         gl_Position = u_matrix * vec4(a_pos, 0, 1);
-        highp float perspective_ratio = gl_Position.w / (u_viewport_height*2.0);
-        extrude *= 1.0 + u_text_pitch_scale*(perspective_ratio - 1.0);
+        perspective_ratio += u_text_pitch_scale*(gl_Position.w / (u_viewport_height*2.0) - 1.0);
+        extrude *= perspective_ratio;
         gl_Position += vec4(extrude, 0, 0);
     }
 
     v_tex = a_tex / u_texsize;
-    v_fade_tex = vec2(a_labelminzoom / 255.0, 0.0);
+    v_fade_tex = vec2(a_labelminzoom*perspective_ratio / 255.0, 0.0);
 }
