@@ -5,6 +5,8 @@ const glMatrix = require('@mapbox/gl-matrix');
 const mat3 = glMatrix.mat3;
 const mat4 = glMatrix.mat4;
 const vec3 = glMatrix.vec3;
+const EXTENT = require('../data/extent');
+const pixelsToTileUnits = require('../source/pixels_to_tile_units');
 
 module.exports = drawRaster;
 
@@ -27,7 +29,13 @@ function drawRaster(painter, sourceCache, layer, coords) {
         drawRasterTile(painter, sourceCache, layer, coord);
     }
 
+    console.log('draw affine raster!!');
+
     gl.depthFunc(gl.LEQUAL);
+}
+
+function getScaleFactor(painter, tile) {
+  return (EXTENT / (tile.tileSize * Math.pow(2, painter.transform.zoom - tile.coord.z)));
 }
 
 function drawRasterTile(painter, sourceCache, layer, coord) {
@@ -37,14 +45,61 @@ function drawRasterTile(painter, sourceCache, layer, coord) {
     gl.disable(gl.STENCIL_TEST);
 
     const tile = sourceCache.getTile(coord);
-    const posMatrix = painter.transform.calculatePosMatrix(coord, sourceCache.getSource().maxzoom);
+    var posMatrix = painter.transform.calculatePosMatrix2(coord, sourceCache.getSource().maxzoom);
+    
+    var transform = window.transform;
+    if(false) {
+      
+      var translation = [
+        pixelsToTileUnits(tile, transform.M[2][3], painter.transform.zoom),
+        pixelsToTileUnits(tile, transform.M[2][4], painter.transform.zoom)
+      ];
 
-    if(window.M) {
-     // var transform = window.M;
-     var transform = window.M;
+      var scaleFactor = getScaleFactor(painter, tile);
+      var translation2 = [
+        transform.M[2][3] * scaleFactor,
+        transform.M[2][4] * scaleFactor,
+        0
+      ];
+
+      
+      //var translatedMatrix = new Float32Array(16);
+      //mat4.translate(translatedMatrix, posMatrix, translation2);
+      
+      //posMatrix = translatedMatrix; 
+      //var scaled = new Float32Array(16);
+      //mat4.scale(scaled, transform.mat4, [scaleFactor, scaleFactor, 1]);
+      //console.log('before', posMatrix);
+      //var mult = new Float32Array(16);
+      
+      //var scale = painter.transform.worldSize / painter.transform.zoomScale(coord.z);
+      //mat4.scale(scaled, transform.mat4, [scale / EXTENT, scale / EXTENT, 1]);
+      //mat4.multiply(mult, posMatrix, scaled);
+       
+      //posMatrix = mult;
+      //console.log('after', mult);
+      //console.log('here', translation, translation2);
+    }
+    //if(transform) {
+      //console.log('transform!!');
+      //debugger;
+      //var translation = [
+      //  pixelsToTileUnits(tile, transform.M[2][3], this.painter.transform.zoom),
+      //  pixelsToTileUnits(tile, transform.M[2][4], this.painter.transform.zoom)
+      //];
+
+      //mat4.scale(transform.mat4, transform.mat4, [scaleFactor, scaleFactor]);
+      //var translatedMatrix = new Float32Array(16);
+      //mat4.translate(translatedMatrix, posMatrix, translation);
+      //posMatrix = translatedMatrix;
+      //debugger;
+      //posMatrix = painter.translatePosMatrix(posMatrix, tile, [transform.M[2][3], transform.M[2][4]]); 
+    //}
+    //if(window.transform) {
+     //var transform = window.transform;
      //console.log('translate', transform.M[2][3], transform.M[2][4]);
      //console.log('before', posMatrix);
-      //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+      //mat4.translate(posMatrix, posMatrix, [transform.M[2][3] * 512, transform.M[2][4] * 512, 0]);
       //console.log('after', posMatrix);
       /*mat4.multiply(posMatrix, posMatrix, new Float32Array([
         transform.M[0][3], 
@@ -64,7 +119,8 @@ function drawRasterTile(painter, sourceCache, layer, coord) {
         0, 
         1]));*/
       //console.log(m);
-    }
+    //}
+
 
     tile.registerFadeDuration(painter.style.animationLoop, layer.paint['raster-fade-duration']);
 

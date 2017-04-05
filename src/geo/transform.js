@@ -322,6 +322,84 @@ class Transform {
         return new Point(p[0] / p[3], p[1] / p[3]);
     }
 
+    calculatePosMatrix2(tileCoord, maxZoom) {
+      debugger;
+      const coord = tileCoord.toCoordinate(maxZoom);
+        const scale = this.worldSize / this.zoomScale(coord.zoom);
+        //debugger;
+        //mat4.create();
+        var posMatrix = mat4.identity(new Float64Array(16));
+var transform = window.transform;
+          if(transform) {
+            //console.log('translate', transform.M[2][3], transform.M[2][4]);
+            //var tx = transform.M[2][3] * (EXTENT / (512 * Math.pow(2, this.zoom - coord.zoom)));
+            //var ty = transform.M[2][4] * (EXTENT / (512 * Math.pow(2, this.zoom - coord.zoom)));
+            //debugger;
+            //var t = mat4.fromValues
+            //t
+            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+          }
+
+        //mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
+
+        var transform = window.transform;
+        var projMatrix = mat4.identity(new Float64Array(16));
+        mat4.multiply(projMatrix, projMatrix, this.projMatrix);
+        if(transform) {
+            //debugger;
+            //mat4.multiply(posMatrix, posMatrix, transform.mat4);
+            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+
+            //mat4.translate(projMatrix, projMatrix, [transform.M[2][4], transform.M[2][4], 0]);
+          }
+            mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
+            //debugger; 
+          if(transform) {
+            //console.log('translate', transform.M[2][3] * scale, transform.M[2][4] * scale);
+            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+          }
+
+        if(window.transform) {
+          var p = new Float64Array(16);
+          mat4.multiply(p, posMatrix, window.transform.mat464);
+          posMatrix = p;
+          //debugger;
+          //var transform = window.transform;
+            //console.log('transforming!!!');
+            //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+            //mat4.scale(projMatrix, projMatrix, [transform.M[0][3], transform.M[1][4], 0]);
+          /*mat4.multiply(projMatrix, projMatrix, new Float32Array([
+            transform.M[0][3],
+            transform.M[0][4],
+            0,
+            0,
+            transform.M[1][3],
+            transform.M[1][4],
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            transform.M[2][3],
+            transform.M[2][4],
+            0,
+            1
+          ]));*/
+        }
+        //debugger;
+        mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
+
+        mat4.multiply(posMatrix, projMatrix, posMatrix);
+
+
+
+
+        return new Float32Array(posMatrix);
+
+
+    }
+
     /**
      * Calculate the posMatrix that, given a tile coordinate, would be used to display the tile on a map.
      * @param {TileCoord} tileCoord
@@ -330,13 +408,48 @@ class Transform {
     calculatePosMatrix(tileCoord, maxZoom) {
         // if z > maxzoom then the tile is actually a overscaled maxzoom tile,
         // so calculate the matrix the maxzoom tile would use.
+        //debugger;
         const coord = tileCoord.toCoordinate(maxZoom);
         const scale = this.worldSize / this.zoomScale(coord.zoom);
 
         const posMatrix = mat4.identity(new Float64Array(16));
         mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
+        var transform = window.transform;
+        var projMatrix = mat4.identity(new Float64Array(16));
+        mat4.multiply(projMatrix, projMatrix, this.projMatrix);
+          if(transform) {
+            //console.log('translate', transform.M[2][3], transform.M[2][4]);
+            //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+          }
+
+        if(window.transform) {
+          var transform = window.transform;
+          //console.log('transforming!!!');
+          //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+
+          /*mat4.multiply(projMatrix, projMatrix, new Float32Array([
+            transform.M[0][3],
+            transform.M[0][4],
+            0,
+            0,
+            transform.M[1][3],
+            transform.M[1][4],
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            transform.M[2][3],
+            transform.M[2][4],
+            0,
+            1
+          ]));*/
+        }
         mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
-        mat4.multiply(posMatrix, this.projMatrix, posMatrix);
+        mat4.multiply(posMatrix, projMatrix, posMatrix);
+        
+
 
         return new Float32Array(posMatrix);
     }
@@ -436,6 +549,9 @@ class Transform {
         mat4.scale(m, m, [1, 1, verticalScale, 1]);
 
         this.projMatrix = m;
+
+        //console.log('projection matrix is', m);
+        //this.projMatrix = m;
 
         // matrix for conversion from location to screen coordinates
         m = mat4.create();

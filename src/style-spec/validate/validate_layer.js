@@ -60,9 +60,9 @@ module.exports = function validateLayer(options) {
             const sourceType = source && unbundle(source.type);
             if (!source) {
                 errors.push(new ValidationError(key, layer.source, 'source "%s" not found', layer.source));
-            } else if (sourceType === 'vector' && type === 'raster') {
+            } else if (sourceType === 'vector' && (type === 'raster' && type === 'affine-raster')) {
                 errors.push(new ValidationError(key, layer.source, 'layer "%s" requires a raster source', layer.id));
-            } else if (sourceType === 'raster' && type !== 'raster') {
+            } else if (sourceType === 'raster' && (type !== 'raster' && type !== 'affine-raster')) {
                 errors.push(new ValidationError(key, layer.source, 'layer "%s" requires a vector source', layer.id));
             } else if (sourceType === 'vector' && !layer['source-layer']) {
                 errors.push(new ValidationError(key, layer, 'layer "%s" must specify a "source-layer"', layer.id));

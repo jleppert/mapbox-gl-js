@@ -72,5 +72,13 @@ module.exports = {
     symbolSDF: {
         fragmentSource: fs.readFileSync(path.join(__dirname, '../shaders/symbol_sdf.fragment.glsl'), 'utf8'),
         vertexSource: fs.readFileSync(path.join(__dirname, '../shaders/symbol_sdf.vertex.glsl'), 'utf8')
+    },
+    test: {
+        fragmentSource: fs.readFileSync(path.join(__dirname, '../shaders/test.fragment.glsl'), 'utf8'),
+        vertexSource: fs.readFileSync(path.join(__dirname, '../shaders/test.vertex.glsl'), 'utf8')
+    },
+    triangle: {
+        fragmentSource: fs.readFileSync(path.join(__dirname, '../shaders/triangle.fragment.glsl'), 'utf8'),
+        vertexSource: fs.readFileSync(path.join(__dirname, '../shaders/triangle.vertex.glsl'), 'utf8')
     }
 };
