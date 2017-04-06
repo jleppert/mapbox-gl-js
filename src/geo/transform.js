@@ -7,7 +7,8 @@ const LngLat = require('./lng_lat'),
     interp = require('../util/interpolate'),
     TileCoord = require('../source/tile_coord'),
     EXTENT = require('../data/extent'),
-    glmatrix = require('@mapbox/gl-matrix');
+    glmatrix = require('@mapbox/gl-matrix'),
+    affineFit = require('affineFit');
 
 const vec4 = glmatrix.vec4,
     mat4 = glmatrix.mat4,
@@ -322,82 +323,18 @@ class Transform {
         return new Point(p[0] / p[3], p[1] / p[3]);
     }
 
-    calculatePosMatrix2(tileCoord, maxZoom) {
-      debugger;
-      const coord = tileCoord.toCoordinate(maxZoom);
-        const scale = this.worldSize / this.zoomScale(coord.zoom);
-        //debugger;
-        //mat4.create();
-        var posMatrix = mat4.identity(new Float64Array(16));
-var transform = window.transform;
-          if(transform) {
-            //console.log('translate', transform.M[2][3], transform.M[2][4]);
-            //var tx = transform.M[2][3] * (EXTENT / (512 * Math.pow(2, this.zoom - coord.zoom)));
-            //var ty = transform.M[2][4] * (EXTENT / (512 * Math.pow(2, this.zoom - coord.zoom)));
-            //debugger;
-            //var t = mat4.fromValues
-            //t
-            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
-          }
+    projectControlPoints(points, type, obj, projection, origin) {
+      var self = this;
+      var pOrigin = origin;
 
-        //mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
+      var pts = points.map(function(unprojected) {
+        var projected = projection(unprojected);
+        return [projected.x - pOrigin.x, projected.y - pOrigin.y];
+      });
 
-        var transform = window.transform;
-        var projMatrix = mat4.identity(new Float64Array(16));
-        mat4.multiply(projMatrix, projMatrix, this.projMatrix);
-        if(transform) {
-            //debugger;
-            //mat4.multiply(posMatrix, posMatrix, transform.mat4);
-            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+      obj[type] = pts;
 
-            //mat4.translate(projMatrix, projMatrix, [transform.M[2][4], transform.M[2][4], 0]);
-          }
-            mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
-            //debugger; 
-          if(transform) {
-            //console.log('translate', transform.M[2][3] * scale, transform.M[2][4] * scale);
-            //mat4.translate(posMatrix, posMatrix, [transform.M[2][3], transform.M[2][4], 0]);
-          }
-
-        if(window.transform) {
-          var p = new Float64Array(16);
-          mat4.multiply(p, posMatrix, window.transform.mat464);
-          posMatrix = p;
-          //debugger;
-          //var transform = window.transform;
-            //console.log('transforming!!!');
-            //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
-            //mat4.scale(projMatrix, projMatrix, [transform.M[0][3], transform.M[1][4], 0]);
-          /*mat4.multiply(projMatrix, projMatrix, new Float32Array([
-            transform.M[0][3],
-            transform.M[0][4],
-            0,
-            0,
-            transform.M[1][3],
-            transform.M[1][4],
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            transform.M[2][3],
-            transform.M[2][4],
-            0,
-            1
-          ]));*/
-        }
-        //debugger;
-        mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
-
-        mat4.multiply(posMatrix, projMatrix, posMatrix);
-
-
-
-
-        return new Float32Array(posMatrix);
-
-
+      return pts;
     }
 
     /**
@@ -408,7 +345,6 @@ var transform = window.transform;
     calculatePosMatrix(tileCoord, maxZoom) {
         // if z > maxzoom then the tile is actually a overscaled maxzoom tile,
         // so calculate the matrix the maxzoom tile would use.
-        //debugger;
         const coord = tileCoord.toCoordinate(maxZoom);
         const scale = this.worldSize / this.zoomScale(coord.zoom);
 
@@ -417,42 +353,31 @@ var transform = window.transform;
         var transform = window.transform;
         var projMatrix = mat4.identity(new Float64Array(16));
         mat4.multiply(projMatrix, projMatrix, this.projMatrix);
-          if(transform) {
-            //console.log('translate', transform.M[2][3], transform.M[2][4]);
-            //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
-          }
 
-        if(window.transform) {
-          var transform = window.transform;
-          //console.log('transforming!!!');
-          //mat4.translate(projMatrix, projMatrix, [transform.M[2][3], transform.M[2][4], 0]);
+        mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
+        mat4.multiply(posMatrix, projMatrix, posMatrix);
+        return new Float32Array(posMatrix);
+    }
 
-          /*mat4.multiply(projMatrix, projMatrix, new Float32Array([
-            transform.M[0][3],
-            transform.M[0][4],
-            0,
-            0,
-            transform.M[1][3],
-            transform.M[1][4],
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            transform.M[2][3],
-            transform.M[2][4],
-            0,
-            1
-          ]));*/
-        }
+    calculatePosMatrix2(tileCoord, maxZoom) {
+        // if z > maxzoom then the tile is actually a overscaled maxzoom tile,
+        // so calculate the matrix the maxzoom tile would use.
+
+        const coord = tileCoord.toCoordinate(maxZoom);
+        const scale = this.worldSize / this.zoomScale(coord.zoom);
+
+        const posMatrix = mat4.identity(new Float64Array(16));
+        mat4.translate(posMatrix, posMatrix, [coord.column * scale, coord.row * scale, 0]);
+        var transform = window.transform;
+        var projMatrix = mat4.identity(new Float64Array(16));
+        mat4.multiply(projMatrix, projMatrix, this.projMatrix);
+
         mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
         mat4.multiply(posMatrix, projMatrix, posMatrix);
         
-
-
         return new Float32Array(posMatrix);
     }
+
 
     _constrain() {
         if (!this.center || !this.width || !this.height || this._constraining) return;
@@ -541,28 +466,65 @@ var transform = window.transform;
         mat4.translate(m, m, [0, 0, -this.cameraToCenterDistance]);
         mat4.rotateX(m, m, this._pitch);
         mat4.rotateZ(m, m, this.angle);
-        mat4.translate(m, m, [-this.x, -this.y, 0]);
 
-        // scale vertically to meters per pixel (inverse of ground resolution):
-        // worldSize / (circumferenceOfEarth * cos(lat * π / 180))
-        const verticalScale = this.worldSize / (2 * Math.PI * 6378137 * Math.abs(Math.cos(this.center.lat * (Math.PI / 180))));
-        mat4.scale(m, m, [1, 1, verticalScale, 1]);
+        if(this.transformPoints) {
+          var tx = this.transformPoints.tx;
 
-        this.projMatrix = m;
+          function project(latLng) {
+            //return tx.project(latLng);
+            return { x: tx.lngX(latLng.lng), y: tx.latY(latLng.lat) };
+          }
 
-        //console.log('projection matrix is', m);
-        //this.projMatrix = m;
+          var ptsObj = {}, origin = { x: tx.x, y: tx.y };
+          var transform = affineFit(
+            this.projectControlPoints(this.transformPoints.domain, 'domain', ptsObj, project, origin),
+            this.projectControlPoints(this.transformPoints.range, 'range', ptsObj, project, origin)
+          );
+          var posTransform = new Float64Array([transform.M[0][3], transform.M[0][4], 0, 0, transform.M[1][3], transform.M[1][4], 0, 0, 0, 0, 1, 0, transform.M[2][3], transform.M[2][4], 0, 1]);
+          
+          var p = mat4.multiply(new Float64Array(16), m, posTransform);
+          mat4.translate(p, p, [-this.x, -this.y, 0]);
 
-        // matrix for conversion from location to screen coordinates
-        m = mat4.create();
-        mat4.scale(m, m, [this.width / 2, -this.height / 2, 1]);
-        mat4.translate(m, m, [1, -1, 0]);
-        this.pixelMatrix = mat4.multiply(new Float64Array(16), m, this.projMatrix);
+          //var p = mat4.translate(new Float64Array(16), m, [100, 100, 0]);
+          var matrices = createFromMercator.call(this, p);
+          this.projMatrix = matrices.projMatrix;
+          this.pixelMatrix = matrices.pixelMatrix;
+          this.pixelMatrixInverse = matrices.pixelMatrixInverse;
 
-        // inverse matrix for conversion from screen coordinaes to location
-        m = mat4.invert(new Float64Array(16), this.pixelMatrix);
-        if (!m) throw new Error("failed to invert matrix");
-        this.pixelMatrixInverse = m;
+        } else {
+          mat4.translate(m, m, [-this.x, -this.y, 0]);
+          var matrices = createFromMercator.call(this, m);
+          this.projMatrix = matrices.projMatrix;
+          this.pixelMatrix = matrices.pixelMatrix;
+          this.pixelMatrixInverse = matrices.pixelMatrixInverse;
+        }
+
+        function createFromMercator(m) {
+          // scale vertically to meters per pixel (inverse of ground resolution):
+          // worldSize / (circumferenceOfEarth * cos(lat * π / 180))
+          const verticalScale = this.worldSize / (2 * Math.PI * 6378137 * Math.abs(Math.cos(this.center.lat * (Math.PI / 180))));
+          mat4.scale(m, m, [1, 1, verticalScale, 1]);
+
+          var projMatrix = m;
+
+          // matrix for conversion from location to screen coordinates
+          m = mat4.create();
+          mat4.scale(m, m, [this.width / 2, -this.height / 2, 1]);
+          mat4.translate(m, m, [1, -1, 0]);
+          var pixelMatrix = mat4.multiply(new Float64Array(16), m, projMatrix);
+
+
+          // inverse matrix for conversion from screen coordinaes to location
+          m = mat4.invert(new Float64Array(16), pixelMatrix);
+          if (!m) throw new Error("failed to invert matrix");
+          var pixelMatrixInverse = m;
+          
+          return {
+            projMatrix: projMatrix,
+            pixelMatrix: pixelMatrix,
+            pixelMatrixInverse: pixelMatrixInverse
+          };
+        }
 
     }
 }
