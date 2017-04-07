@@ -468,7 +468,7 @@ class Transform {
         mat4.rotateZ(m, m, this.angle);
 
         if(this.transformPoints) {
-          var tx = this.transformPoints.tx;
+          var tx = this;
 
           function project(latLng) {
             //return tx.project(latLng);
